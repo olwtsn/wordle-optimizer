@@ -1,0 +1,133 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>How the Wordle Optimizer Works</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;700&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Nunito', sans-serif;
+            background-color: #fbfdfe;
+        }
+        .code-block {
+            background-color: #e2e8f0;
+            color: #1a202c;
+            padding: 1rem;
+            border-radius: 0.5rem;
+            overflow-x: auto;
+        }
+    </style>
+</head>
+<body class="bg-[#fbfdfe] text-gray-800">
+
+    <!-- Header & Navigation -->
+    <header class="sticky top-0 bg-white shadow-lg z-50">
+        <nav class="container mx-auto px-6 py-4 flex justify-between items-center">
+            <h1 class="text-xl font-bold text-gray-800">Wordle Optimizer</h1>
+            <div class="space-x-4 text-sm font-medium">
+                <a href="https://olwtsn.cloud" class="text-gray-600 hover:text-orange-600 transition-colors">Back to Portfolio</a>
+                <a href="/index.html" class="text-gray-600 hover:text-orange-600 transition-colors">Wordle Results</a>
+            </div>
+        </nav>
+    </header>
+
+    <!-- Main Content -->
+    <main class="container mx-auto px-6 py-12 max-w-4xl">
+        <h2 class="text-3xl md:text-4xl font-extrabold text-gray-900 mb-6 text-center">How the Wordle Optimizer Works</h2>
+        <p class="text-center text-lg text-gray-700 mb-12">
+            This project is a data-driven approach to solving the daily Wordle puzzle. Instead of guessing randomly, it uses a scientific method to find the single best starting word.
+        </p>
+
+        <div class="space-y-10">
+
+            <!-- 1. The Method -->
+            <div>
+                <h3 class="text-2xl font-bold text-gray-900 mb-4">1. The Method: Information Theory</h3>
+                <p class="text-gray-700">
+                    The core of the optimizer is a concept from information theory called 'entropy'. In simple terms, entropy measures the amount of uncertainty in a piece of information. When applied to Wordle, it measures how much a guess is expected to reduce the number of possible answers. The goal is to find the word that, on average, provides the most information and eliminates the largest number of possible answers.
+                </p>
+                <p class="text-gray-700 mt-2">
+                    The solver uses the Shannon entropy formula, which calculates the average amount of information gained from a single guess. A high entropy score means the word is excellent at narrowing down the possibilities, while a low score means it doesn't give you much new information.
+                </p>
+            </div>
+
+            <!-- 2. The Logic -->
+            <div>
+                <h3 class="text-2xl font-bold text-gray-900 mb-4">2. The Logic: Step-by-Step</h3>
+                <ol class="list-decimal list-inside text-gray-700 space-y-4">
+                    <li>
+                        <b>Load Word Lists</b>: The function first connects to a Google Cloud Storage bucket I created, to load three lists: a list of all possible Wordle answers, a list of all valid guesses, and a list of all previous answers. This is done to ensure the solver is working with the most up-to-date and accurate data. The list of previously used words is updated daily—which the function then recalculates—but this time without the answers from previous Wordle puzzles, as answers do not repeat themselves.
+                    </li>
+                    <li>
+                        <b>The `calculate_entropy` function</b>: This is the heart of the algorithm. For every possible guess word, the function calculates its entropy score. It does this by figuring out all the possible outcomes (e.g., green, yellow, gray letters) for that guess against all remaining possible answers. The formula then measures which guess gives you the most information on average.
+                        <pre class="code-block mt-4">
+def calculate_entropy(self, guess, possible_answers):
+    "Calculates the information entropy for a guess."
+    patterns = {}
+    for answer in possible_answers:
+        pattern = self.get_pattern(guess, answer)
+        if pattern not in patterns:
+            patterns[pattern] = 0
+        patterns[pattern] += 1
+
+    entropy = 0
+    total_answers = len(possible_answers)
+    for pattern_count in patterns.values():
+        probability = pattern_count / total_answers
+        entropy -= probability * math.log2(probability)
+
+    return entropy
+                        </pre>
+                    </li>
+                    <li>
+                        <b>Find the Best Word</b>: After calculating the entropy for all potential starting words, the function simply selects the word with the highest entropy score. This word is the statistically optimal first guess.
+                    </li>
+                    <li>
+                        <b>Store Results</b>: Finally, the function saves the best word and its score to a Firestore database. This allows the website to display the result without having to run the complex calculation every time a user visits the page.
+                    </li>
+                    <li>
+                        <b>Understanding The Score</b>: A good word entropy score is typically in the range of 4.5 to 6, which indicates the word is highly effective at eliminating possibilities. An average word might score between 3.5 and 4.5, while a bad word could have a score below 3.5, meaning it provides very little information for the next guess.
+                    </li>
+                </ol>
+            </div>
+            
+            <!-- 3. The Tech Stack -->
+            <div>
+                <h3 class="text-2xl font-bold text-gray-900 mb-4">3. The Tech Stack</h3>
+                <p class="text-gray-700">
+                    This project demonstrates a fully serverless, cloud-native architecture on Google Cloud Platform:
+                </p>
+                <ul class="list-disc list-inside text-gray-700 space-y-2 mt-4">
+                    <li>
+                        <b>Python</b>: The core logic of the Wordle solver is written in Python.
+                    </li>
+                    <li>
+                        <b>Google Cloud Storage</b>: This is used to store the word lists, which the function reads from during its execution.
+                    </li>
+                    <li>
+                        <b>Google Cloud Functions</b>: The Python code is deployed as a serverless function, which means it only runs when someone requests the best word. This is a highly cost-effective and scalable solution.
+                    </li>
+                    <li>
+                        <b>Google Cloud Firestore</b>: This database is used to store the daily result, allowing the website to retrieve the word quickly without re-running the heavy computation.
+                    </li>
+                    <li>
+                        <b>HTML/CSS</b>: A simple, static webpage displays the result and an explanation of the project.
+                    </li>
+                </ul>
+            </div>
+
+        </div>
+
+    </main>
+
+    <!-- Footer -->
+    <footer class="bg-gray-200 text-gray-600 py-8 text-center mt-12">
+        <div class="container mx-auto px-6">
+            <p>&copy; 2025 Oluwatosin Raji. All rights reserved.</p>
+        </div>
+    </footer>
+
+</body>
+</html>
