@@ -1,0 +1,7 @@
+{
+  "name": "wordle-optimizer",
+  "version": "1.0.0",
+  "scripts": {
+    "build": "echo 'No build step required for Python/static site'"
+  }
+}
