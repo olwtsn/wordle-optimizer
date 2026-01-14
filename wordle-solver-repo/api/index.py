@@ -70,9 +70,11 @@ class WordleSolver:
         return {"word": best_word, "entropy": round(scores[best_word], 2)}
 
 def load_data():
-    curr_dir = os.path.dirname(__file__)
-    # Correct pathing for Vercel: project-root/data/
-    data_dir = os.path.abspath(os.path.join(curr_dir, '..', 'data'))
+    # 'current_dir' will be project-root/api/
+    current_dir = os.path.dirname(os.path.abspath(__file__))
+    
+    # 'data_dir' will be project-root/data/
+    data_dir = os.path.join(current_dir, '..', 'data')
     
     with open(os.path.join(data_dir, 'answerlist.json'), 'r') as f:
         answers = json.load(f)
