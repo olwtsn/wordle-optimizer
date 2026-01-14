@@ -19,21 +19,21 @@ BEST_STARTERS = [
 
 class WordleSolver:
     def __init__(self, answer_list, used_list):
-        self.answer_list = set(answer_list)
-        self.used_list = set(used_list)
+        # RESILIENT LOADING:
+        # 1. Check if item is a list/tuple (the "unhashable" culprit) and grab the first element
+        # 2. Convert to string and uppercase
+        # 3. Filter out any empty values
+        def process(word_list):
+            processed = set()
+            for w in word_list:
+                if isinstance(w, (list, tuple)) and len(w) > 0:
+                    processed.add(str(w[0]).upper())
+                elif isinstance(w, str) and w.strip():
+                    processed.add(w.strip().upper())
+            return processed
 
-    def get_pattern(self, guess, answer):
-        pattern = [""] * 5
-        g_chars, a_chars = list(guess), list(answer)
-        for i in range(5):
-            if g_chars[i] == a_chars[i]:
-                pattern[i] = "g"
-                a_chars[i] = g_chars[i] = None
-        for i in range(5):
-            if g_chars[i] and g_chars[i] in a_chars:
-                pattern[i] = "y"
-                a_chars[a_chars.index(g_chars[i])] = None
-        return "".join([p if p else "-" for p in pattern])
+        self.answer_list = process(answer_list)
+        self.used_list = process(used_list)
 
     def calculate_entropy(self, guess, possible_answers):
         patterns = {}
