@@ -1,0 +1,3 @@
+# api/wordle/requirements.txt
+# No external dependencies needed
+# All imports are from Python standard library
