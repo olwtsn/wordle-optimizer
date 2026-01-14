@@ -20,9 +20,7 @@ BEST_STARTERS = [
 class WordleSolver:
     def __init__(self, answer_list, used_list):
         # RESILIENT LOADING:
-        # 1. Check if item is a list/tuple (the "unhashable" culprit) and grab the first element
-        # 2. Convert to string and uppercase
-        # 3. Filter out any empty values
+        # Handles accidental nested lists [["word"]] and converts to a set of strings
         def process(word_list):
             processed = set()
             for w in word_list:
@@ -35,7 +33,28 @@ class WordleSolver:
         self.answer_list = process(answer_list)
         self.used_list = process(used_list)
 
+    def get_pattern(self, guess, answer):
+        """Calculates the green/yellow/gray pattern for a guess against an answer."""
+        pattern = [""] * 5
+        g_chars = list(guess)
+        a_chars = list(answer)
+
+        # First pass: Find Green (Correct position)
+        for i in range(5):
+            if g_chars[i] == a_chars[i]:
+                pattern[i] = "g"
+                a_chars[i] = g_chars[i] = None
+
+        # Second pass: Find Yellow (Wrong position)
+        for i in range(5):
+            if g_chars[i] and g_chars[i] in a_chars:
+                pattern[i] = "y"
+                a_chars[a_chars.index(g_chars[i])] = None
+
+        return "".join([p if p else "-" for p in pattern])
+
     def calculate_entropy(self, guess, possible_answers):
+        """Calculates bits of information (entropy) for a given guess."""
         patterns = {}
         for answer in possible_answers:
             p = self.get_pattern(guess, answer)
@@ -70,8 +89,9 @@ class WordleSolver:
         return {"word": best_word, "entropy": round(scores[best_word], 2)}
 
 def load_data():
-    curr_dir = os.path.dirname(__file__)
-    # Correct pathing for Vercel: project-root/data/
+    """Loads JSON data from the /data folder relative to this script."""
+    curr_dir = os.path.dirname(os.path.abspath(__file__))
+    # Goes up one level from /api to root, then into /data
     data_dir = os.path.abspath(os.path.join(curr_dir, '..', 'data'))
     
     with open(os.path.join(data_dir, 'answerlist.json'), 'r') as f:
@@ -94,4 +114,8 @@ def get_best_word():
             "is_precalculated": len(used) == 0
         })
     except Exception as e:
+        # Returns the error as JSON so the frontend can display it
         return jsonify({"status": "error", "message": str(e)}), 500
+
+# Vercel needs this to recognize the Flask app object
+app = app
