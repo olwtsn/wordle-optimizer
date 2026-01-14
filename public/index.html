@@ -1,170 +1,63 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Wordle Solver | olwtsn.cloud</title>
     <style>
-        * { margin: 0; padding: 0; box-sizing: border-box; }
-        body {
-            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 
-Roboto, sans-serif;
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            min-height: 100vh;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            padding: 20px;
-        }
-        .container {
-            background: white;
-            border-radius: 20px;
-            padding: 40px;
-            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
-            max-width: 500px;
-            width: 100%;
-            text-align: center;
-        }
-        h1 {
-            color: #6aaa64;
-            margin-bottom: 10px;
-            font-size: 2.5em;
-        }
-        .subtitle {
-            color: #666;
-            margin-bottom: 30px;
-        }
-        .word-box {
-            background: #f8f9fa;
-            border-radius: 10px;
-            padding: 30px;
-            margin: 30px 0;
-            border: 3px solid #6aaa64;
-        }
-        .word {
-            font-size: 4em;
-            font-weight: bold;
-            color: #6aaa64;
-            letter-spacing: 5px;
-            text-transform: uppercase;
-        }
-        .entropy {
-            font-size: 1.2em;
-            color: #666;
-            margin-top: 10px;
-        }
-        button {
-            background: #6aaa64;
-            color: white;
-            border: none;
-            padding: 15px 40px;
-            font-size: 1.1em;
-            border-radius: 50px;
-            cursor: pointer;
-            transition: all 0.3s;
-            font-weight: bold;
-            margin-top: 20px;
-        }
-        button:hover {
-            background: #5a9a54;
-            transform: translateY(-2px);
-            box-shadow: 0 5px 15px rgba(0,0,0,0.2);
-        }
-        button:disabled {
-            background: #ccc;
-            cursor: not-allowed;
-            transform: none;
-            box-shadow: none;
-        }
-        .info {
-            margin-top: 30px;
-            color: #888;
-            font-size: 0.9em;
-        }
-        .loading {
-            animation: pulse 1.5s infinite;
-        }
-        @keyframes pulse {
-            0% { opacity: 1; }
-            50% { opacity: 0.5; }
-            100% { opacity: 1; }
-        }
+        body { font-family: -apple-system, sans-serif; display: flex; justify-content: center; align-items: center; height: 100vh; background: #121213; color: white; margin: 0; }
+        .card { background: #1a1a1b; padding: 2rem; border-radius: 8px; border: 1px solid #3a3a3c; text-align: center; max-width: 400px; width: 90%; }
+        .word { font-size: 3rem; font-weight: bold; letter-spacing: 5px; color: #538d4e; margin: 1rem 0; }
+        .stats { color: #818384; font-size: 0.9rem; }
+        button { background: #538d4e; color: white; border: none; padding: 10px 20px; border-radius: 4px; cursor: pointer; font-weight: bold; margin-top: 1rem; }
+        button:hover { background: #6aaa64; }
+        .loading { color: #d7dadc; font-style: italic; }
     </style>
 </head>
 <body>
-    <div class="container">
-        <h1>Wordle Solver</h1>
-        <p class="subtitle">Find the optimal starting word using entropy 
-analysis</p>
-        
-        <div class="word-box">
-            <div class="word" id="word">-----</div>
-            <div class="entropy">Entropy: <span 
-id="entropy">-</span></div>
-        </div>
-        
-        <button onclick="getBestWord()" id="getBtn">
-            Get Best Word
-        </button>
-        
-        <div class="info" id="info">
-            Click the button to analyze today's best starting word
-        </div>
-    </div>
 
-    <script>
-        async function getBestWord() {
-            const btn = document.getElementById('getBtn');
-            const wordEl = document.getElementById('word');
-            const entropyEl = document.getElementById('entropy');
-            const infoEl = document.getElementById('info');
-            
-            // Show loading state
-            btn.disabled = true;
-            btn.innerHTML = 'Analyzing...';
-            wordEl.textContent = '...';
-            wordEl.classList.add('loading');
-            entropyEl.textContent = 'calculating';
-            infoEl.textContent = 'Running entropy analysis...';
-            
-            try {
-                // Call your Vercel API
-                const response = await fetch('/api/wordle/best-word');
-                const data = await response.json();
+<div class="card">
+    <h2>Wordle Suggestion</h2>
+    <div id="loader" class="loading">Calculating entropy...</div>
+    <div id="word-display" class="word" style="display:none;"></div>
+    <div id="stats-display" class="stats" style="display:none;"></div>
+    <button onclick="fetchBestWord()">Get New Suggestion</button>
+</div>
+
+<script>
+    async function fetchBestWord() {
+        const wordEl = document.getElementById('word-display');
+        const statsEl = document.getElementById('stats-display');
+        const loader = document.getElementById('loader');
+
+        // Reset UI
+        loader.style.display = 'block';
+        wordEl.style.display = 'none';
+        statsEl.style.display = 'none';
+
+        try {
+            // This calls the Flask route in your /api folder
+            const response = await fetch('/api/best-word');
+            const data = await response.json();
+
+            if (data.status === "success") {
+                wordEl.innerText = data.best_word.word;
+                statsEl.innerText = `Entropy: ${data.best_word.entropy} | Precalculated: ${data.is_precalculated}`;
                 
-                if (data.status === 'success') {
-                    wordEl.textContent = data.best_word.word;
-                    entropyEl.textContent = 
-data.best_word.entropy.toFixed(2);
-                    infoEl.textContent = `Updated: ${new 
-Date(data.timestamp).toLocaleTimeString()}`;
-                } else {
-                    throw new Error(data.message || 'Analysis failed');
-                }
-            } catch (error) {
-                console.error('Error:', error);
-                // Fallback words
-                const fallbackWords = [
-                    {word: 'CRANE', entropy: 5.72},
-                    {word: 'SLATE', entropy: 5.69},
-                    {word: 'TRACE', entropy: 5.66},
-                    {word: 'CARTE', entropy: 5.65}
-                ];
-                const randomWord = fallbackWords[Math.floor(Math.random() 
-* fallbackWords.length)];
-                
-                wordEl.textContent = randomWord.word;
-                entropyEl.textContent = randomWord.entropy.toFixed(2);
-                infoEl.textContent = 'Using cached analysis. Try again in 
-a moment.';
-            } finally {
-                // Reset button
-                btn.disabled = false;
-                btn.innerHTML = 'Get Best Word';
-                wordEl.classList.remove('loading');
+                loader.style.display = 'none';
+                wordEl.style.display = 'block';
+                statsEl.style.display = 'block';
+            } else {
+                throw new Error(data.message);
             }
+        } catch (err) {
+            loader.innerText = "Error: " + err.message;
         }
-        
-        // Load on page open
-        window.onload = getBestWord;
-    </script>
+    }
+
+    // Run on load
+    fetchBestWord();
+</script>
+
 </body>
 </html>
